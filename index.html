@@ -143,6 +143,10 @@
     font-size: 0.75rem;
     opacity: 0.5;
   }
+  #count {
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
 </style>
 </head>
 
@@ -182,7 +186,9 @@
       <button onclick="saveEmail()">Notify Me</button>
       <p id="message"></p>
     </div>
-
+    <div class="social-proof">
+  🚀 <span id="count">0</span> people joined the waitlist
+    </div>
     <div class="footer">
       Launching soon • Built for students, freelancers & weekend hustlers
     </div>
@@ -211,7 +217,13 @@
   </script>
   <script type="module">
   //import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
+  // import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
+        import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  getCountFromServer 
+} from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
   import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-analytics.js";
   // const firebaseConfig = {
@@ -222,6 +234,7 @@
   //   messagingSenderId: "YOUR_SENDER_ID",
   //   appId: "YOUR_APP_ID"
   // };
+    
   const firebaseConfig = {
     apiKey: "AIzaSyDvWC-vxSKeLRx8-mPWmJvrJ-7CyTFaAV8",
     authDomain: "workonweekends-96011.firebaseapp.com",
@@ -234,6 +247,17 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   const analytics = getAnalytics(app);
+    async function loadCount() {
+  try {
+    const coll = collection(db, "waitlist");
+    const snapshot = await getCountFromServer(coll);
+    const count = snapshot.data().count;
+
+    document.getElementById("count").textContent = count;
+  } catch (e) {
+    console.error("Count error:", e);
+  }
+}
   window.saveEmail = async function () {
     const email = document.getElementById("email").value;
 
@@ -247,12 +271,17 @@
 
       document.getElementById("message").innerText =
         "🎉 Thanks! You're on the waitlist.";
+      loadCount();
     } catch (e) {
       console.error(e);
       document.getElementById("message").innerText =
         "Something went wrong. Try again.";
     }
   };
+const el = document.getElementById("count");
+el.style.transform = "scale(1.2)";
+setTimeout(() => el.style.transform = "scale(1)", 200);
 </script>
 </body>
+  loadCount();
 </html>
