@@ -151,12 +151,54 @@
   display: inline-block;
   transition: transform 0.2s ease;
 }
+/* NAVBAR */
+.navbar {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  width: 100%;
+  padding: 0 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Brand (WOW top-left) */
+.brand {
+  font-weight: bold;
+  font-size: 1.2rem;
+  letter-spacing: 2px;
+  color: #38bdf8;
+}
+
+/* CTA Button (top-right) */
+.cta-btn {
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(8px);
+  color: white;
+  cursor: pointer;
+  transition: 0.3s;
+  font-size: 0.9rem;
+}
+
+/* Hover effect */
+.cta-btn:hover {
+  background: linear-gradient(135deg, #0ea5e9, #6366f1);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(14,165,233,0.4);
+}
 </style>
 </head>
 
 <body>
+  <div class="navbar">
+  <div class="brand">WOW</div>
+  <button class="cta-btn" onclick="goToLogin()">Join Beta</button>
+  </div>  
   <div class="container">
-   <div class="logo">WOW</div>
 
 <h1>
   Work On <span class="highlight">Weekend</span>
@@ -199,7 +241,7 @@
   </div>
 
   <script>
-    // Set launch date (EDIT THIS)
+    // Set launch date 
     const launchDate = new Date("2026-06-01T00:00:00").getTime();
 
     const timer = setInterval(() => {
@@ -253,6 +295,9 @@ import {
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   const analytics = getAnalytics(app);
+window.goToLogin = function () {
+  window.location.href = "login.html";
+};
   async function loadCount() {
   try {
     const coll = collection(db, "waitlist");

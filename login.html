@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login — WorkOnWeekend</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      background: linear-gradient(-45deg, #0f172a, #1e293b, #0ea5e9, #6366f1);
+      background-size: 400% 400%;
+      animation: gradientMove 12s ease infinite;
+    }
+
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .container {
+      text-align: center;
+      padding: 40px;
+      border-radius: 20px;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 0 40px rgba(0,0,0,0.4);
+      width: 320px;
+    }
+
+    .logo {
+      margin-bottom: 20px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      letter-spacing: 2px;
+      color: #38bdf8;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      font-weight: 400;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 12px;
+      border: none;
+      border-radius: 8px;
+      outline: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      margin-top: 8px;
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(14,165,233,0.5);
+    }
+
+    .secondary-btn {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    #message {
+      margin-top: 10px;
+      font-size: 0.85rem;
+      color: #38bdf8;
+    }
+
+    .back {
+      margin-top: 15px;
+      font-size: 0.8rem;
+      opacity: 0.6;
+      cursor: pointer;
+    }
+    .google-btn {
+  background: white;
+  color: black;
+  font-weight: 500;
+}
+
+    .back:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+    <div class="logo">WOW</div>
+    <h2>Login or Sign Up</h2>
+
+    <input id="email" type="email" placeholder="Email" />
+    <input id="password" type="password" placeholder="Password" />
+
+    <button onclick="signup()">Sign Up</button>
+    <button class="secondary-btn" onclick="login()">Login</button>
+    <button onclick="googleLogin()">Continue with Google</button>
+    <p id="message"></p>
+
+    <div class="back" onclick="goBack()">← Back to Home</div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+    import { 
+      getAuth, 
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+    import {
+  GoogleAuthProvider,
+  signInWithPopup
+} from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+    import { 
+      getFirestore, 
+      doc, 
+      setDoc 
+    } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDvWC-vxSKeLRx8-mPWmJvrJ-7CyTFaAV8",
+    authDomain: "workonweekends-96011.firebaseapp.com",
+    projectId: "workonweekends-96011",
+    storageBucket: "workonweekends-96011.firebasestorage.app",
+    messagingSenderId: "230783932199",
+    appId: "1:230783932199:web:62790663dd02d1f973fb02",
+    measurementId: "G-G06KX479BD"
+  };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // SIGN UP
+    window.signup = async function () {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      if (!email || password.length < 6) {
+        document.getElementById("message").innerText = "Password must be at least 6 characters";
+        return;
+      }
+
+      try {
+        const userCred = await createUserWithEmailAndPassword(auth, email, password);
+
+        await setDoc(doc(db, "users", userCred.user.uid), {
+          email: email,
+          role: "worker",
+          createdAt: new Date()
+        });
+
+        document.getElementById("message").innerText = "🎉 Account created!";
+      } catch (e) {
+        document.getElementById("message").innerText = e.message;
+      }
+    };
+
+    // LOGIN
+    window.login = async function () {
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (e) {
+        document.getElementById("message").innerText = e.message;
+      }
+    };
+
+    // AUTH STATE REDIRECT
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        window.location.href = "/app.html";
+      }
+    });
+
+    // BACK BUTTON
+    window.goBack = function () {
+      window.location.href = "/index.html";
+    };
+    const provider = new GoogleAuthProvider();
+
+window.googleLogin = async function () {
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    // Optional: store user in Firestore
+    await setDoc(doc(db, "users", user.uid), {
+      email: user.email,
+      name: user.displayName,
+      photoURL: user.photoURL,
+      provider: "google",
+      createdAt: new Date()
+    }, { merge: true });
+
+    window.location.href = "/app.html";
+
+  } catch (e) {
+    document.getElementById("message").innerText = e.message;
+  }
+};
+  </script>
+
+</body>
+</html>

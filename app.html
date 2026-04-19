@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WOW Dashboard</title>
+
+<style>
+body {
+  margin:0;
+  font-family: Arial;
+  background:#0f172a;
+  color:white;
+}
+
+header {
+  display:flex;
+  justify-content:space-between;
+  padding:20px;
+  background:rgba(255,255,255,0.05);
+}
+
+.container {
+  max-width:800px;
+  margin:auto;
+  padding:20px;
+}
+
+.card {
+  background:rgba(255,255,255,0.05);
+  padding:15px;
+  margin:10px 0;
+  border-radius:10px;
+}
+
+input, textarea, select {
+  width:100%;
+  padding:10px;
+  margin:5px 0;
+  border-radius:6px;
+  border:none;
+}
+
+button {
+  padding:10px;
+  background:#0ea5e9;
+  border:none;
+  color:white;
+  border-radius:6px;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div>WOW Dashboard</div>
+  <button onclick="logout()">Logout</button>
+</header>
+
+<div class="container">
+
+  <h2>Create Job (Employer)</h2>
+
+  <div id="jobForm">
+    <input id="title" placeholder="Job title">
+    <textarea id="desc" placeholder="Description"></textarea>
+    <input id="location" placeholder="Location">
+    <input id="pay" placeholder="Pay">
+    <button onclick="createJob()">Post Job</button>
+  </div>
+
+  <h2>Job Feed</h2>
+  <div id="jobs"></div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  query,
+  orderBy,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
+
+import {
+  getAuth,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDvWC-vxSKeLRx8-mPWmJvrJ-7CyTFaAV8",
+    authDomain: "workonweekends-96011.firebaseapp.com",
+    projectId: "workonweekends-96011",
+    storageBucket: "workonweekends-96011.firebasestorage.app",
+    messagingSenderId: "230783932199",
+    appId: "1:230783932199:web:62790663dd02d1f973fb02",
+    measurementId: "G-G06KX479BD"
+  };
+
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+// AUTH GUARD
+onAuthStateChanged(auth, (user) => {
+  if (!user) window.location.href = "login.html";
+});
+
+// CREATE JOB
+window.createJob = async function () {
+  const title = document.getElementById("title").value;
+  const desc = document.getElementById("desc").value;
+  const location = document.getElementById("location").value;
+  const pay = document.getElementById("pay").value;
+
+  await addDoc(collection(db, "jobs"), {
+    title,
+    description: desc,
+    location,
+    pay,
+    createdAt: serverTimestamp(),
+    createdBy: auth.currentUser.uid
+  });
+
+  loadJobs();
+};
+
+// LOAD JOBS (real-time simple version)
+async function loadJobs() {
+  const q = query(collection(db, "jobs"), orderBy("createdAt", "desc"));
+  const snap = await getDocs(q);
+
+  const container = document.getElementById("jobs");
+  container.innerHTML = "";
+
+  snap.forEach(doc => {
+    const j = doc.data();
+
+    container.innerHTML += `
+      <div class="card">
+        <h3>${j.title}</h3>
+        <p>${j.description}</p>
+        <small>${j.location} • ${j.pay}</small>
+      </div>
+    `;
+  });
+}
+
+loadJobs();
+
+// LOGOUT
+window.logout = function () {
+  signOut(auth);
+};
+</script>
+
+</body>
+</html>
