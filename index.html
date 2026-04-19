@@ -92,7 +92,11 @@
     gap: 18px;
     margin-bottom: 30px;
   }
-
+  .social-proof {
+  margin-top: 15px;
+  font-size: 0.9rem;
+  opacity: 0.75;
+  }
   .time-box span {
     display: block;
     font-size: 1.6rem;
@@ -218,10 +222,12 @@
   <script type="module">
   //import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   // import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
-        import { 
+import { 
   getFirestore, 
   collection, 
-  addDoc, 
+  setDoc, 
+  doc, 
+  getDoc,
   getCountFromServer 
 } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
@@ -247,41 +253,65 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
   const analytics = getAnalytics(app);
-    async function loadCount() {
+  async function loadCount() {
   try {
     const coll = collection(db, "waitlist");
     const snapshot = await getCountFromServer(coll);
     const count = snapshot.data().count;
 
-    document.getElementById("count").textContent = count;
+    const el = document.getElementById("count");
+    el.textContent = count;
+
+    // animation here
+    el.style.transform = "scale(1.2)";
+    setTimeout(() => el.style.transform = "scale(1)", 200);
+
   } catch (e) {
     console.error("Count error:", e);
   }
 }
   window.saveEmail = async function () {
-    const email = document.getElementById("email").value;
+  const emailInput = document.getElementById("email");
+  const email = emailInput.value.trim().toLowerCase();
 
-    if (!email) return;
+  if (!email || !email.includes("@")) {
+    document.getElementById("message").innerText = "Enter a valid email";
+    return;
+  }
 
-    try {
-      await addDoc(collection(db, "waitlist"), {
-        email: email,
-        timestamp: new Date()
-      });
+  try {
+    const docRef = doc(db, "waitlist", email);
+    const docSnap = await getDoc(docRef);
 
+    if (docSnap.exists()) {
       document.getElementById("message").innerText =
-        "🎉 Thanks! You're on the waitlist.";
-      loadCount();
-    } catch (e) {
-      console.error(e);
-      document.getElementById("message").innerText =
-        "Something went wrong. Try again.";
+        "⚠️ You're already on the waitlist!";
+      return;
     }
-  };
+
+    await setDoc(docRef, {
+      email: email,
+      timestamp: new Date()
+    });
+
+    document.getElementById("message").innerText =
+      "🎉 Thanks! You're on the waitlist.";
+
+    emailInput.value = "";
+
+    loadCount();
+
+  } catch (e) {
+    console.error(e);
+    document.getElementById("message").innerText =
+      "Something went wrong. Try again.";
+  }
+};
 const el = document.getElementById("count");
 el.style.transform = "scale(1.2)";
 setTimeout(() => el.style.transform = "scale(1)", 200);
+     loadCount();
 </script>
 </body>
-  loadCount();
+ 
 </html>
