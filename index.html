@@ -165,5 +165,50 @@
 
     }, 1000);
   </script>
+  <script type="module">
+  //import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-analytics.js";
+  // const firebaseConfig = {
+  //   apiKey: "YOUR_API_KEY",
+  //   authDomain: "YOUR_AUTH_DOMAIN",
+  //   projectId: "YOUR_PROJECT_ID",
+  //   storageBucket: "YOUR_BUCKET",
+  //   messagingSenderId: "YOUR_SENDER_ID",
+  //   appId: "YOUR_APP_ID"
+  // };
+  const firebaseConfig = {
+    apiKey: "AIzaSyDvWC-vxSKeLRx8-mPWmJvrJ-7CyTFaAV8",
+    authDomain: "workonweekends-96011.firebaseapp.com",
+    projectId: "workonweekends-96011",
+    storageBucket: "workonweekends-96011.firebasestorage.app",
+    messagingSenderId: "230783932199",
+    appId: "1:230783932199:web:62790663dd02d1f973fb02",
+    measurementId: "G-G06KX479BD"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const analytics = getAnalytics(app);
+  window.saveEmail = async function () {
+    const email = document.getElementById("email").value;
+
+    if (!email) return;
+
+    try {
+      await addDoc(collection(db, "waitlist"), {
+        email: email,
+        timestamp: new Date()
+      });
+
+      document.getElementById("message").innerText =
+        "🎉 Thanks! You're on the waitlist.";
+    } catch (e) {
+      console.error(e);
+      document.getElementById("message").innerText =
+        "Something went wrong. Try again.";
+    }
+  };
+</script>
 </body>
 </html>
