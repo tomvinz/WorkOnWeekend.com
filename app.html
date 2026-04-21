@@ -70,7 +70,17 @@ button {
     <input id="pay" placeholder="Pay">
     <button onclick="createJob()">Post Job</button>
   </div>
+<h2>Find Jobs</h2>
 
+<div class="card">
+  <input id="search" placeholder="Search jobs..." oninput="applyFilters()">
+
+  <select id="filterLocation" onchange="applyFilters()">
+    <option value="">All Locations</option>
+  </select>
+
+  <button onclick="detectLocation()">📍 Use My Location</button>
+</div>
   <h2>Job Feed</h2>
   <div id="jobs"></div>
 
@@ -135,26 +145,63 @@ window.createJob = async function () {
 };
 
 // LOAD JOBS (real-time simple version)
+let allJobs = [];
+
 async function loadJobs() {
   const q = query(collection(db, "jobs"), orderBy("createdAt", "desc"));
   const snap = await getDocs(q);
 
+  allJobs = [];
+
+  snap.forEach(doc => {
+    allJobs.push(doc.data());
+  });
+
+  populateLocationFilter();
+  renderJobs(allJobs);
+}
+function renderJobs(jobs) {
   const container = document.getElementById("jobs");
   container.innerHTML = "";
 
-  snap.forEach(doc => {
-    const j = doc.data();
-
+  jobs.forEach(j => {
     container.innerHTML += `
       <div class="card">
         <h3>${j.title}</h3>
         <p>${j.description}</p>
-        <small>${j.location} • ${j.pay}</small>
+        <small>📍 ${j.location} • 💶 ${j.pay}</small>
       </div>
     `;
   });
 }
+function populateLocationFilter() {
+  const select = document.getElementById("filterLocation");
 
+  const locations = [...new Set(allJobs.map(j => j.location))];
+
+  select.innerHTML = `<option value="">All Locations</option>`;
+
+  locations.forEach(loc => {
+    select.innerHTML += `<option value="${loc}">${loc}</option>`;
+  });
+}
+window.applyFilters = function () {
+  const search = document.getElementById("search").value.toLowerCase();
+  const location = document.getElementById("filterLocation").value;
+
+  let filtered = allJobs.filter(j => {
+    const matchesSearch =
+      j.title.toLowerCase().includes(search) ||
+      j.description.toLowerCase().includes(search);
+
+    const matchesLocation =
+      !location || j.location === location;
+
+    return matchesSearch && matchesLocation;
+  });
+
+  renderJobs(filtered);
+};
 loadJobs();
 
 // LOGOUT
