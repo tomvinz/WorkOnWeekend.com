@@ -95,7 +95,10 @@ import {
   getDocs,
   query,
   orderBy,
-  serverTimestamp
+  serverTimestamp,
+  doc,
+  setDoc,
+  getDoc
 } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-firestore.js";
 
 import {
@@ -104,33 +107,46 @@ import {
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
 
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyDvWC-vxSKeLRx8-mPWmJvrJ-7CyTFaAV8",
-    authDomain: "workonweekends-96011.firebaseapp.com",
-    projectId: "workonweekends-96011",
-    storageBucket: "workonweekends-96011.firebasestorage.app",
-    messagingSenderId: "230783932199",
-    appId: "1:230783932199:web:62790663dd02d1f973fb02",
-    measurementId: "G-G06KX479BD"
-  };
-
+const firebaseConfig = {
+  apiKey: "AIzaSy...",
+  authDomain: "workonweekends-96011.firebaseapp.com",
+  projectId: "workonweekends-96011"
+};
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+// =========================
 // AUTH GUARD
+// =========================
+import { getAuth, signOut, onAuthStateChanged } from 
+"https://www.gstatic.com/firebasejs/12.12.0/firebase-auth.js";
+
+
+
+// Hide page until auth is ready
+document.body.style.display = "none";
+
 onAuthStateChanged(auth, (user) => {
-  if (!user) window.location.href = "login.html";
+  if (!user) {
+    window.location.href = "login.html";
+  } else {
+    document.body.style.display = "block"; // show UI only after auth confirmed
+    loadJobs();
+  }
 });
 
+// =========================
 // CREATE JOB
+// =========================
 window.createJob = async function () {
   const title = document.getElementById("title").value;
   const desc = document.getElementById("desc").value;
   const location = document.getElementById("location").value;
   const pay = document.getElementById("pay").value;
+
+  if (!title || !desc || !location) return alert("Fill all fields");
 
   await addDoc(collection(db, "jobs"), {
     title,
@@ -144,7 +160,9 @@ window.createJob = async function () {
   loadJobs();
 };
 
-// LOAD JOBS (real-time simple version)
+// =========================
+// LOAD JOBS
+// =========================
 let allJobs = [];
 
 async function loadJobs() {
@@ -153,13 +171,20 @@ async function loadJobs() {
 
   allJobs = [];
 
-  snap.forEach(doc => {
-    allJobs.push(doc.data());
+  snap.forEach(docSnap => {
+    allJobs.push({
+      id: docSnap.id,
+      ...docSnap.data()
+    });
   });
 
   populateLocationFilter();
   renderJobs(allJobs);
 }
+
+// =========================
+// RENDER JOBS
+// =========================
 function renderJobs(jobs) {
   const container = document.getElementById("jobs");
   container.innerHTML = "";
@@ -170,10 +195,47 @@ function renderJobs(jobs) {
         <h3>${j.title}</h3>
         <p>${j.description}</p>
         <small>📍 ${j.location} • 💶 ${j.pay}</small>
+        <br><br>
+        <button onclick="applyJob('${j.id}', '${j.title}')">
+          Apply
+        </button>
       </div>
     `;
   });
 }
+
+// =========================
+// APPLY TO JOB (Phase 3)
+// =========================
+window.applyJob = async function (jobId, jobTitle) {
+  const user = auth.currentUser;
+
+  if (!user) return;
+
+  const applicationId = `${user.uid}_${jobId}`;
+  const applicationRef = doc(db, "applications", applicationId);
+
+  const existing = await getDoc(applicationRef);
+
+  if (existing.exists()) {
+    alert("⚠️ Already applied to this job");
+    return;
+  }
+
+  await setDoc(applicationRef, {
+    jobId,
+    jobTitle,
+    applicantId: user.uid,
+    appliedAt: new Date(),
+    status: "pending"
+  });
+
+  alert("✅ Application submitted!");
+};
+
+// =========================
+// FILTERS
+// =========================
 function populateLocationFilter() {
   const select = document.getElementById("filterLocation");
 
@@ -185,11 +247,12 @@ function populateLocationFilter() {
     select.innerHTML += `<option value="${loc}">${loc}</option>`;
   });
 }
+
 window.applyFilters = function () {
   const search = document.getElementById("search").value.toLowerCase();
   const location = document.getElementById("filterLocation").value;
 
-  let filtered = allJobs.filter(j => {
+  const filtered = allJobs.filter(j => {
     const matchesSearch =
       j.title.toLowerCase().includes(search) ||
       j.description.toLowerCase().includes(search);
@@ -202,12 +265,36 @@ window.applyFilters = function () {
 
   renderJobs(filtered);
 };
-loadJobs();
 
+// =========================
+// LOCATION DETECTION (FREE)
+// =========================
+window.detectLocation = function () {
+  if (!navigator.geolocation) {
+    alert("Geolocation not supported");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+
+      // Simple display (no paid API)
+      alert(`📍 Your location: ${lat.toFixed(2)}, ${lon.toFixed(2)}`);
+    },
+    () => alert("Location permission denied")
+  );
+};
+
+// =========================
 // LOGOUT
+// =========================
 window.logout = function () {
   signOut(auth);
 };
+
+
 </script>
 
 </body>
